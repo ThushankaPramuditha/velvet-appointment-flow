@@ -193,9 +193,11 @@ const BookingForm = () => {
                       onSelect={(date) =>
                         setFormData({ ...formData, appointment_date: date })
                       }
-                      disabled={(date) =>
-                        date < new Date() || date.getDay() === 0
-                      }
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today || date.getDay() === 0;
+                      }}
                       className="rounded-xl border border-border bg-card p-3"
                     />
                   </div>
