@@ -66,9 +66,19 @@ export const useAppointments = (date?: string) => {
   });
 };
 
+// Separate interface for public queue display (no PII)
+export interface QueueAppointment {
+  id: string;
+  customer_name: string;
+  service: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  queue_position: number | null;
+}
+
 export const useQueueAppointments = () => {
   const queryClient = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
 
   // Set up realtime subscription
   useEffect(() => {
@@ -94,21 +104,18 @@ export const useQueueAppointments = () => {
 
   return useQuery({
     queryKey: ["queue-appointments"],
-    queryFn: async (): Promise<Appointment[]> => {
+    queryFn: async (): Promise<QueueAppointment[]> => {
+      // Use the secure view that excludes PII (phone, email)
       const { data, error } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("appointment_date", today)
-        .in("status", ["confirmed", "in-queue", "in-progress"])
-        .order("queue_position", { ascending: true, nullsFirst: false })
-        .order("appointment_time", { ascending: true });
+        .from("appointments_queue")
+        .select("*");
 
       if (error) {
         console.error("Error fetching queue:", error);
         return [];
       }
 
-      return data as Appointment[];
+      return data as QueueAppointment[];
     },
     refetchInterval: 5000, // Refresh every 5 seconds for TV display
   });
