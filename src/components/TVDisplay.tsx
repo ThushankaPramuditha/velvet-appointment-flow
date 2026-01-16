@@ -1,4 +1,4 @@
-import { useQueueAppointments } from "@/hooks/useAppointments";
+import { useQueueAppointments, QueueAppointment } from "@/hooks/useAppointments";
 import { useSalonConfig } from "@/hooks/useSalonConfig";
 import { format } from "date-fns";
 import { Scissors, Clock, User } from "lucide-react";
