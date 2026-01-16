@@ -127,7 +127,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      appointments_queue: {
+        Row: {
+          appointment_date: string | null
+          appointment_time: string | null
+          customer_name: string | null
+          id: string | null
+          queue_position: number | null
+          service: string | null
+          status: string | null
+        }
+        Insert: {
+          appointment_date?: string | null
+          appointment_time?: string | null
+          customer_name?: string | null
+          id?: string | null
+          queue_position?: number | null
+          service?: string | null
+          status?: string | null
+        }
+        Update: {
+          appointment_date?: string | null
+          appointment_time?: string | null
+          customer_name?: string | null
+          id?: string | null
+          queue_position?: number | null
+          service?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
