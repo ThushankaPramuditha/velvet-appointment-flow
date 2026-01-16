@@ -196,7 +196,9 @@ const BookingForm = () => {
                       disabled={(date) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        return date < today || date.getDay() === 0;
+                        const compareDate = new Date(date);
+                        compareDate.setHours(0, 0, 0, 0);
+                        return compareDate < today || date.getDay() === 0;
                       }}
                       className="rounded-xl border border-border bg-card p-3"
                     />
