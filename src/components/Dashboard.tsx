@@ -4,6 +4,7 @@ import {
   useUpdateAppointment,
   useDeleteAppointment,
 } from "@/hooks/useAppointments";
+import ServiceManager from "./ServiceManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -304,6 +305,11 @@ const Dashboard = () => {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Service Management */}
+        <div className="mt-8">
+          <ServiceManager />
         </div>
       </div>
     </div>
