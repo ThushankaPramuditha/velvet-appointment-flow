@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Book from "./pages/Book";
 import TV from "./pages/TV";
 import BarberDashboard from "./pages/BarberDashboard";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/book" element={<Book />} />
           <Route path="/tv" element={<TV />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<BarberDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
