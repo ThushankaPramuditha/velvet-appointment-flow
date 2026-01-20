@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useSalonConfig } from "@/hooks/useSalonConfig";
 import { Button } from "@/components/ui/button";
-import { Calendar, Tv, Settings, Scissors } from "lucide-react";
+import { Calendar, Tv, Settings, Scissors, LogIn } from "lucide-react";
 
 const Header = () => {
   const { data: config } = useSalonConfig();
@@ -12,6 +12,7 @@ const Header = () => {
     { path: "/book", label: "Book Now", icon: Calendar },
     { path: "/tv", label: "TV Display", icon: Tv },
     { path: "/dashboard", label: "Dashboard", icon: Settings },
+    { path: "/auth", label: "Login", icon: LogIn },
   ];
 
   return (
