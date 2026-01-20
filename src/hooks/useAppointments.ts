@@ -133,14 +133,13 @@ export const useCreateAppointment = () => {
       appointment_date: string;
       appointment_time: string;
     }) => {
-      const { data, error } = await supabase
+      // Don't use .select() as public users can't read back appointments (RLS)
+      const { error } = await supabase
         .from("appointments")
-        .insert([{ ...appointment, status: "confirmed" }])
-        .select()
-        .single();
+        .insert([{ ...appointment, status: "confirmed" }]);
 
       if (error) throw error;
-      return data;
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
