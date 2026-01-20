@@ -198,7 +198,8 @@ const BookingForm = () => {
                         today.setHours(0, 0, 0, 0);
                         const compareDate = new Date(date);
                         compareDate.setHours(0, 0, 0, 0);
-                        return compareDate < today || date.getDay() === 0;
+                        // Disable past dates (before today) and Sundays
+                        return compareDate.getTime() < today.getTime() || date.getDay() === 0;
                       }}
                       className="rounded-xl border border-border bg-card p-3"
                     />
