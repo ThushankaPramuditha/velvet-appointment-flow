@@ -1,21 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSalonConfig } from "@/hooks/useSalonConfig";
 import { useCreateAppointment } from "@/hooks/useAppointments";
+import { useBookedSlots, isSlotBooked } from "@/hooks/useBookedSlots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { CalendarIcon, Clock, User, Phone, Mail, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, Clock, User, Phone, Mail, CheckCircle, Ban } from "lucide-react";
+import { format, addDays, isSameDay } from "date-fns";
 
 const timeSlots = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -28,6 +22,7 @@ const BookingForm = () => {
   const navigate = useNavigate();
   const { data: config } = useSalonConfig();
   const createAppointment = useCreateAppointment();
+  const { data: bookedSlots = [] } = useBookedSlots();
 
   const [formData, setFormData] = useState({
     customer_name: "",
@@ -43,11 +38,60 @@ const BookingForm = () => {
 
   const services = config?.services || [];
 
+  // Get today and tomorrow only
+  const today = new Date();
+  const tomorrow = addDays(today, 1);
+
+  // Check if a time slot is in the past (for today only)
+  const isTimeSlotPast = (time: string, selectedDate: Date | undefined): boolean => {
+    if (!selectedDate || !isSameDay(selectedDate, today)) {
+      return false;
+    }
+    
+    const now = new Date();
+    const [hours, minutes] = time.split(":").map(Number);
+    const slotTime = new Date(selectedDate);
+    slotTime.setHours(hours, minutes, 0, 0);
+    
+    return slotTime <= now;
+  };
+
+  // Check if slot is booked
+  const isBooked = (time: string): boolean => {
+    if (!formData.appointment_date) return false;
+    const dateStr = format(formData.appointment_date, "yyyy-MM-dd");
+    return isSlotBooked(bookedSlots, dateStr, time);
+  };
+
+  // Get available time slots
+  const getAvailableSlots = () => {
+    return timeSlots.map((time) => ({
+      time,
+      isPast: isTimeSlotPast(time, formData.appointment_date),
+      isBooked: isBooked(time),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.appointment_date || !formData.appointment_time) {
       toast.error("Please select a date and time");
+      return;
+    }
+
+    // Final validation: check if slot is still available
+    const dateStr = format(formData.appointment_date, "yyyy-MM-dd");
+    if (isSlotBooked(bookedSlots, dateStr, formData.appointment_time)) {
+      toast.error("This time slot was just booked. Please select another time.");
+      setStep(2);
+      return;
+    }
+
+    // Check if time is in the past
+    if (isTimeSlotPast(formData.appointment_time, formData.appointment_date)) {
+      toast.error("Cannot book a past time slot. Please select a future time.");
+      setStep(2);
       return;
     }
 
@@ -57,7 +101,7 @@ const BookingForm = () => {
         customer_phone: formData.customer_phone,
         customer_email: formData.customer_email || undefined,
         service: formData.service,
-        appointment_date: format(formData.appointment_date, "yyyy-MM-dd"),
+        appointment_date: dateStr,
         appointment_time: formData.appointment_time,
       });
 
@@ -103,7 +147,7 @@ const BookingForm = () => {
             Book Your <span className="gold-gradient-text">Appointment</span>
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Select your preferred service, date, and time. We'll confirm your booking instantly.
+            Book for today or tomorrow. Select your preferred service, date, and time.
           </p>
         </div>
 
@@ -186,20 +230,29 @@ const BookingForm = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div>
-                    <Label className="mb-3 block">Select Date</Label>
+                    <Label className="mb-3 block">Select Date (Today or Tomorrow)</Label>
                     <Calendar
                       mode="single"
                       selected={formData.appointment_date}
                       onSelect={(date) =>
-                        setFormData({ ...formData, appointment_date: date })
+                        setFormData({ ...formData, appointment_date: date, appointment_time: "" })
                       }
                       disabled={(date) => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const compareDate = new Date(date);
-                        compareDate.setHours(0, 0, 0, 0);
-                        // Disable past dates (before today) and Sundays
-                        return compareDate.getTime() < today.getTime() || date.getDay() === 0;
+                        const dateToCheck = new Date(date);
+                        dateToCheck.setHours(0, 0, 0, 0);
+                        
+                        const todayStart = new Date(today);
+                        todayStart.setHours(0, 0, 0, 0);
+                        
+                        const tomorrowStart = new Date(tomorrow);
+                        tomorrowStart.setHours(0, 0, 0, 0);
+                        
+                        // Only allow today and tomorrow, exclude Sunday
+                        const isToday = dateToCheck.getTime() === todayStart.getTime();
+                        const isTomorrow = dateToCheck.getTime() === tomorrowStart.getTime();
+                        const isSunday = date.getDay() === 0;
+                        
+                        return !isToday && !isTomorrow || isSunday;
                       }}
                       className="rounded-xl border border-border bg-card p-3"
                     />
@@ -207,25 +260,48 @@ const BookingForm = () => {
 
                   <div>
                     <Label className="mb-3 block">Select Time</Label>
-                    <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-2">
-                      {timeSlots.map((time) => (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={() => {
-                            setFormData({ ...formData, appointment_time: time });
-                            setStep(3);
-                          }}
-                          className={`p-3 rounded-lg border text-center transition-all hover:border-primary ${
-                            formData.appointment_time === time
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border hover:bg-card"
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
+                    {!formData.appointment_date ? (
+                      <div className="flex items-center justify-center h-40 text-muted-foreground">
+                        Please select a date first
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-2">
+                        {getAvailableSlots().map(({ time, isPast, isBooked }) => {
+                          const isDisabled = isPast || isBooked;
+                          return (
+                            <button
+                              key={time}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => {
+                                if (!isDisabled) {
+                                  setFormData({ ...formData, appointment_time: time });
+                                  setStep(3);
+                                }
+                              }}
+                              className={`p-3 rounded-lg border text-center transition-all ${
+                                isDisabled
+                                  ? "border-border bg-muted/50 text-muted-foreground cursor-not-allowed opacity-50"
+                                  : formData.appointment_time === time
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border hover:border-primary hover:bg-card"
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1">
+                                {isBooked && <Ban className="h-3 w-3" />}
+                                <span>{time}</span>
+                              </div>
+                              {isBooked && (
+                                <span className="text-xs block">Booked</span>
+                              )}
+                              {isPast && !isBooked && (
+                                <span className="text-xs block">Past</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
