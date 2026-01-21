@@ -26,7 +26,10 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session) {
-          navigate("/dashboard");
+          // Check if user is staff to redirect appropriately
+          setTimeout(() => {
+            checkAndRedirect(session.user.id);
+          }, 0);
         }
       }
     );
@@ -34,12 +37,32 @@ const Auth = () => {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/dashboard");
+        checkAndRedirect(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const checkAndRedirect = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .in("role", ["admin", "barber"]);
+
+      if (data && data.length > 0) {
+        navigate("/dashboard");
+      } else {
+        // Regular customer - redirect to home
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error checking role:", error);
+      navigate("/");
+    }
+  };
 
   const validateForm = () => {
     try {
