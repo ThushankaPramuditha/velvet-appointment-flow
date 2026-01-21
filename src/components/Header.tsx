@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useSalonConfig } from "@/hooks/useSalonConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Calendar, Tv, Settings, Scissors, LogIn, LogOut } from "lucide-react";
+import { Calendar, Tv, Settings, Scissors, LogIn, LogOut, Users } from "lucide-react";
 
 const Header = () => {
   const { data: config } = useSalonConfig();
@@ -15,6 +15,7 @@ const Header = () => {
     { path: "/book", label: "Book Now", icon: Calendar, show: true },
     { path: "/tv", label: "TV Display", icon: Tv, show: isStaff },
     { path: "/dashboard", label: "Dashboard", icon: Settings, show: isStaff },
+    { path: "/admin", label: "Staff", icon: Users, show: isStaff },
   ];
 
   return (
